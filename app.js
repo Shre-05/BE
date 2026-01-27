@@ -7,43 +7,96 @@ let isProcessing = false;
 let avatarAnimating = false;
 let recognitionAccuracy = 0;
 
-// Sample data
-const sampleGestures = [
-    { name: 'hello', text: 'Hello', confidence: 95 },
-    { name: 'thank-you', text: 'Thank you', confidence: 92 },
-    { name: 'please', text: 'Please', confidence: 88 },
-    { name: 'yes', text: 'Yes', confidence: 97 },
-    { name: 'no', text: 'No', confidence: 94 },
-    { name: 'sorry', text: 'I am sorry', confidence: 89 },
-    { name: 'help', text: 'Help me', confidence: 91 }
-];
+let currentText = "";
+let currentIndex = 0;
+let prevChar = "";
+let isPaused = false;
+let timerId = null;
+let letterShown = false;
 
-const userTypes = {
-    hearing: {
-        name: 'Hearing User',
-        icon: 'fas fa-user',
-        primaryInput: 'Speech/Text',
-        primaryOutput: 'Audio/Visual'
-    },
-    deaf: {
-        name: 'Deaf User',
-        icon: 'fas fa-deaf',
-        primaryInput: 'Sign Language',
-        primaryOutput: 'Visual/Text'
-    },
-    mute: {
-        name: 'Mute User',
-        icon: 'fas fa-volume-mute',
-        primaryInput: 'Sign Language/Text',
-        primaryOutput: 'Visual/Text'
-    },
-    blind: {
-        name: 'Blind User',
-        icon: 'fas fa-low-vision',
-        primaryInput: 'Speech/Text',
-        primaryOutput: 'Audio/Tactile'
-    }
-};
+document.addEventListener("DOMContentLoaded", () => {
+
+  const availableLetters = [
+    "A","B","C","D","E","F","G","H","I","J","K","L","M",
+    "N","O","P","Q","R","S","T","U","V","W","X","Y","Z"
+  ];
+
+  const translateBtn = document.getElementById("translate-to-sign");
+  const avatarImg = document.getElementById("avatarImg");
+  const textField = document.getElementById("text-input");
+
+  // ✅ CRITICAL SAFETY CHECK
+  if (!translateBtn || !avatarImg || !textField) {
+    console.warn("Avatar elements not found — avatar module not initialized yet");
+    return;
+  }
+
+});
+
+function playSignsAvatar(text) {
+  const avatarImg = document.getElementById("avatarImg");
+  if (!avatarImg) return;
+
+  currentText = text.toUpperCase();
+  currentIndex = 0;
+  prevChar = "";
+  isPaused = false;
+
+  runAvatar();
+}
+
+function runAvatar() {
+  const avatarImg = document.getElementById("avatarImg");
+  if (!avatarImg || isPaused) return;
+
+  if (currentIndex >= currentText.length) return;
+
+  const char = currentText[currentIndex];
+
+  // SPACE
+  if (char === " ") {
+    avatarImg.src = "avatars/space.jpg";
+    prevChar = "";
+
+    timerId = setTimeout(() => {
+      currentIndex++;
+      runAvatar();
+    }, 900); // ⏳ slower
+    return;
+  }
+
+  // DOUBLE LETTER BLINK
+  if (char === prevChar) {
+    avatarImg.src = "avatars/space.jpg";
+    prevChar = "";
+
+    timerId = setTimeout(() => {
+      runAvatar(); // ⛔ no index change
+    }, 400);
+    return;
+  }
+
+  // NORMAL LETTER
+  if ("ABCDEFGHIJKLMNOPQRSTUVWXYZ".includes(char)) {
+    avatarImg.src = `avatars/${char}.jpg`;
+    prevChar = char;
+  }
+
+  timerId = setTimeout(() => {
+    currentIndex++;
+    runAvatar();
+  }, 1100); // ⏳ readable speed
+}
+
+document.getElementById("replay-animation").addEventListener("click", () => {
+  if (!currentText) return;
+
+  clearTimeout(timerId);
+  currentIndex = 0;
+  prevChar = "";
+  isPaused = false;
+  runAvatar();
+});
 
 // DOM Elements
 let elements = {};
@@ -126,7 +179,7 @@ function initializeEventListeners() {
     });
     
     // Sign Recognition
-    if (elements.startCameraBtn) {
+    /*if (elements.startCameraBtn) {
         elements.startCameraBtn.addEventListener('click', startCamera);
     }
     if (elements.toggleCameraBtn) {
@@ -137,7 +190,7 @@ function initializeEventListeners() {
             item.addEventListener('click', () => simulateGestureRecognition(item.dataset.gesture, true));
         });
     }
-    
+    */
     // Speech to Sign
     if (elements.inputMethods) {
         elements.inputMethods.forEach(method => {
@@ -408,28 +461,17 @@ function switchInputMethod(method) {
 function translateToSign() {
     const text = elements.textInput.value.trim();
     if (!text) return;
-    
-    // Update translation display
+
+    // Update UI text (keep your existing UI logic)
     if (elements.currentTranslation) {
         elements.currentTranslation.textContent = text;
     }
-    
-    // Generate sign sequence
-    const words = text.split(' ');
-    const sequence = words.map(word => `Sign: ${word.toUpperCase()}`).join(' → ');
-    
-    if (elements.signSequence) {
-        elements.signSequence.innerHTML = `
-            <div class="sequence-item">${sequence}</div>
-        `;
-    }
-    
-    // Update avatar display
-    updateAvatarDisplay('ready', text);
-    
-    // Auto-play animation
-    setTimeout(() => playAvatarAnimation(), 500);
+
+    // 🚀 START REAL SIGN PLAYBACK
+    playSignsAvatar(text);
 }
+
+
 
 function toggleVoiceRecording() {
     isRecording = !isRecording;
@@ -517,7 +559,7 @@ function updateAvatarDisplay(state, text) {
     
     elements.avatarDisplay.innerHTML = stateDisplays[state] || stateDisplays['idle'];
 }
-
+/*
 function playAvatarAnimation() {
     if (avatarAnimating) return;
     
@@ -545,7 +587,27 @@ function pauseAvatarAnimation() {
 function replayAvatarAnimation() {
     pauseAvatarAnimation();
     setTimeout(() => playAvatarAnimation(), 100);
-}
+}*/
+document.getElementById("pause-animation").addEventListener("click", () => {
+  isPaused = true;
+  clearTimeout(timerId);
+});
+
+document.getElementById("play-animation").addEventListener("click", () => {
+  if (!currentText) return;
+  isPaused = false;
+  runAvatar();
+});
+
+document.getElementById("replay-animation").addEventListener("click", () => {
+  if (!currentText) return;
+  clearTimeout(timerId);
+  currentIndex = 0;
+  prevChar = "";
+  isPaused = false;
+  runAvatar();
+});
+
 
 // Chat Functions
 function initializeChat() {
