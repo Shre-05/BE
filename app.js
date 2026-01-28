@@ -1,4 +1,8 @@
 // Application State
+const socket = io("http://localhost:5000");
+let mediaRecorder;
+let audioChunks = [];
+
 let currentPage = 'home';
 let currentUserType = 'hearing';
 let cameraActive = false;
@@ -6,7 +10,6 @@ let isRecording = false;
 let isProcessing = false;
 let avatarAnimating = false;
 let recognitionAccuracy = 0;
-
 // Sample data
 const sampleGestures = [
     { name: 'hello', text: 'Hello', confidence: 95 },
@@ -17,7 +20,6 @@ const sampleGestures = [
     { name: 'sorry', text: 'I am sorry', confidence: 89 },
     { name: 'help', text: 'Help me', confidence: 91 }
 ];
-
 const userTypes = {
     hearing: {
         name: 'Hearing User',
@@ -44,10 +46,8 @@ const userTypes = {
         primaryOutput: 'Audio/Tactile'
     }
 };
-
 // DOM Elements
 let elements = {};
-
 // Initialize Application
 document.addEventListener('DOMContentLoaded', function() {
     initializeElements();
@@ -55,7 +55,6 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeNavigation();
     updateUserProfile();
 });
-
 function initializeElements() {
     elements = {
         // Navigation
@@ -111,7 +110,6 @@ function initializeElements() {
         featureCards: document.querySelectorAll('.feature-card')
     };
 }
-
 function initializeEventListeners() {
     // Navigation
     elements.navItems.forEach(item => {
@@ -213,7 +211,6 @@ function initializeEventListeners() {
         });
     }
 }
-
 function initializeNavigation() {
     // Set initial active nav item
     const homeNavItem = document.querySelector('.nav-item[data-page="home"]');
@@ -221,7 +218,6 @@ function initializeNavigation() {
         homeNavItem.classList.add('active');
     }
 }
-
 // Navigation Functions
 function navigateToPage(pageName) {
     // Update active nav item
@@ -247,12 +243,10 @@ function navigateToPage(pageName) {
         initializeSettings();
     }
 }
-
 // Sign Recognition Functions
 function initializeSignRecognition() {
     resetSignRecognition();
 }
-
 function resetSignRecognition() {
     cameraActive = false;
     if (elements.translationText) {
@@ -261,7 +255,6 @@ function resetSignRecognition() {
     updateConfidenceDisplay(0);
     updateProcessingStatus('standby');
 }
-
 function startCamera() {
     cameraActive = true;
     if (elements.cameraFeed) {
@@ -283,7 +276,6 @@ function startCamera() {
     // Simulate continuous gesture recognition
     startGestureSimulation();
 }
-
 function toggleCamera() {
     if (cameraActive) {
         pauseCamera();
@@ -291,7 +283,6 @@ function toggleCamera() {
         startCamera();
     }
 }
-
 function pauseCamera() {
     cameraActive = false;
     if (elements.cameraFeed) {
@@ -307,7 +298,6 @@ function pauseCamera() {
     updateProcessingStatus('standby');
     stopGestureSimulation();
 }
-
 function startGestureSimulation() {
     if (!cameraActive) return;
     
@@ -321,11 +311,9 @@ function startGestureSimulation() {
         }
     }, 2000 + Math.random() * 3000);
 }
-
 function stopGestureSimulation() {
     // Simulation stops naturally when cameraActive becomes false
 }
-
 function simulateGestureRecognition(gestureName, isManual = false) {
     // Allow manual gestures or camera-based gestures
     if (!isManual && !cameraActive) return;
@@ -356,7 +344,6 @@ function simulateGestureRecognition(gestureName, isManual = false) {
         }, 2000);
     }, 500 + Math.random() * 1000);
 }
-
 function updateConfidenceDisplay(confidence) {
     recognitionAccuracy = confidence;
     if (elements.confidenceValue) {
@@ -366,7 +353,6 @@ function updateConfidenceDisplay(confidence) {
         elements.confidenceFill.style.width = confidence + '%';
     }
 }
-
 function updateProcessingStatus(status) {
     const statusMap = {
         'standby': { text: 'Standby', class: 'standby' },
@@ -384,13 +370,11 @@ function updateProcessingStatus(status) {
         statusText.textContent = statusInfo.text;
     }
 }
-
 // Speech to Sign Functions
 function initializeSpeechToSign() {
     // Reset to text input method
     switchInputMethod('text');
 }
-
 function switchInputMethod(method) {
     elements.inputMethods.forEach(btn => {
         btn.classList.toggle('active', btn.dataset.method === method);
@@ -404,7 +388,6 @@ function switchInputMethod(method) {
         elements.voiceInputArea.classList.remove('hidden');
     }
 }
-
 function translateToSign() {
     const text = elements.textInput.value.trim();
     if (!text) return;
@@ -429,30 +412,6 @@ function translateToSign() {
     
     // Auto-play animation
     setTimeout(() => playAvatarAnimation(), 500);
-}
-
-function toggleVoiceRecording() {
-    isRecording = !isRecording;
-    
-    const voiceBtn = elements.recordVoiceBtn;
-    const voiceStatus = document.querySelector('.voice-status');
-    
-    if (isRecording) {
-        voiceBtn.classList.add('recording');
-        voiceBtn.innerHTML = '<i class="fas fa-stop"></i>';
-        voiceStatus.textContent = 'Recording... Click to stop';
-        
-        // Simulate speech recognition
-        setTimeout(() => {
-            if (isRecording) {
-                simulateVoiceTranscription();
-            }
-        }, 2000 + Math.random() * 3000);
-    } else {
-        voiceBtn.classList.remove('recording');
-        voiceBtn.innerHTML = '<i class="fas fa-microphone"></i>';
-        voiceStatus.textContent = 'Click to start recording';
-    }
 }
 
 function simulateVoiceTranscription() {
@@ -487,7 +446,6 @@ function simulateVoiceTranscription() {
     voiceBtn.innerHTML = '<i class="fas fa-microphone"></i>';
     voiceStatus.textContent = 'Click to start recording';
 }
-
 function updateAvatarDisplay(state, text) {
     if (!elements.avatarDisplay) return;
     
@@ -517,7 +475,6 @@ function updateAvatarDisplay(state, text) {
     
     elements.avatarDisplay.innerHTML = stateDisplays[state] || stateDisplays['idle'];
 }
-
 function playAvatarAnimation() {
     if (avatarAnimating) return;
     
@@ -533,7 +490,6 @@ function playAvatarAnimation() {
         updateAvatarDisplay('ready', currentText);
     }, duration);
 }
-
 function pauseAvatarAnimation() {
     if (!avatarAnimating) return;
     
@@ -541,15 +497,95 @@ function pauseAvatarAnimation() {
     const currentText = elements.currentTranslation.textContent;
     updateAvatarDisplay('ready', currentText);
 }
-
 function replayAvatarAnimation() {
     pauseAvatarAnimation();
     setTimeout(() => playAvatarAnimation(), 100);
 }
-
 // Chat Functions
 function initializeChat() {
-    // Chat is already initialized with sample messages
+   socket.emit("join_chat", {
+        name: "You",
+        userType: currentUserType
+    });
+    socket.on("receive_message", (data) => {
+        addChatMessage(
+            data.sender,
+            data.userType,
+            data.message,
+            "incoming"
+        );
+    });
+    const micBtn = document.querySelector(".input-option[data-input='voice']");
+    if (micBtn) {
+        micBtn.onclick = handleChatVoiceMessage;
+    }
+}
+function toggleVoiceRecording() {
+  isRecording = !isRecording;
+    const voiceBtn = elements.recordVoiceBtn;
+    const voiceStatus = document.querySelector(".voice-status");
+    if (isRecording) {
+        voiceBtn.classList.add("recording");
+        voiceBtn.innerHTML = '<i class="fas fa-stop"></i>';
+        voiceStatus.textContent = "Recording... Click to stop";
+        // ⏱ simulate recording, then convert voice → text
+        setTimeout(() => {
+            if (isRecording) {
+                simulateVoiceTranscription(); // 👈 THIS WAS MISSING
+            }
+        }, 2000);
+    } else {
+        voiceBtn.classList.remove("recording");
+        voiceBtn.innerHTML = '<i class="fas fa-microphone"></i>';
+        voiceStatus.textContent = "Click to start recording";
+    }
+}
+function handleChatVoiceMessage() {
+  if (!("webkitSpeechRecognition" in window || "SpeechRecognition" in window)) {
+        alert("Speech Recognition not supported in this browser");
+        return;
+    }
+    const SpeechRecognition =
+        window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    recognition.lang = "en-US";
+    recognition.interimResults = false;
+    recognition.continuous = false;
+    // 🎤 mic button (chat mic)
+    const micBtn = document.querySelector(".input-option[data-input='voice']");
+    recognition.start();
+    // 🔵 mic ON (listening)
+    if (micBtn) micBtn.classList.add("active");
+    recognition.onstart = () => {
+        showNotification("Listening...", "info");
+    };
+    recognition.onresult = (event) => {
+        const text = event.results[0][0].transcript;
+        addChatMessage(
+        "You",
+        currentUserType,
+        text,
+        "outgoing",
+        "voice"
+    );
+         socket.emit("send_message", {
+        sender: "You",
+        userType: currentUserType,
+        message: text,
+        messageType: "voice"
+    });
+    };
+    // 🔴 mic OFF (speech finished)
+    recognition.onend = () => {
+        if (micBtn) micBtn.classList.remove("active");
+        showNotification("Recording stopped", "success");
+    };
+    // ❌ error case → also reset mic
+    recognition.onerror = (event) => {
+        console.error("Speech error:", event.error);
+        if (micBtn) micBtn.classList.remove("active");
+        showNotification("Voice recognition failed", "error");
+    };
 }
 
 function switchChatInputMethod(method) {
@@ -568,35 +604,21 @@ function switchChatInputMethod(method) {
         elements.chatInputField.placeholder = placeholders[method] || placeholders['text'];
     }
 }
-
 function sendChatMessage() {
     const message = elements.chatInputField.value.trim();
     if (!message) return;
-    
-    // Add user message
-    addChatMessage('You', currentUserType, message, 'outgoing');
-    
+    const messageData = {
+        sender: "You",
+        userType: currentUserType,
+        message: message
+    };
+    // Show message on your own screen
+    addChatMessage("You", currentUserType, message, "outgoing");
+    // Send message to backend
+    socket.emit("send_message", messageData);
     // Clear input
-    elements.chatInputField.value = '';
-    
-    // Simulate response from another user
-    setTimeout(() => {
-        const responses = [
-            "That's great to hear!",
-            "Thank you for sharing.",
-            "I understand completely.",
-            "Let me help you with that.",
-            "That sounds wonderful!"
-        ];
-        
-        const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-        const otherUserTypes = Object.keys(userTypes).filter(type => type !== currentUserType);
-        const randomUserType = otherUserTypes[Math.floor(Math.random() * otherUserTypes.length)];
-        
-        addChatMessage('Sarah', randomUserType, randomResponse, 'incoming');
-    }, 1000 + Math.random() * 2000);
+    elements.chatInputField.value = "";
 }
-
 function addChatMessage(sender, userType, message, direction) {
     if (!elements.chatMessages) return;
     
@@ -627,7 +649,6 @@ function addChatMessage(sender, userType, message, direction) {
     elements.chatMessages.appendChild(messageDiv);
     elements.chatMessages.scrollTop = elements.chatMessages.scrollHeight;
 }
-
 function addSystemMessage(message) {
     if (!elements.chatMessages) return;
     
@@ -642,7 +663,6 @@ function addSystemMessage(message) {
     elements.chatMessages.appendChild(messageDiv);
     elements.chatMessages.scrollTop = elements.chatMessages.scrollHeight;
 }
-
 // Settings Functions
 function initializeSettings() {
     // Update current values
@@ -653,7 +673,6 @@ function initializeSettings() {
     // Update slider values
     updateSliderDisplays();
 }
-
 function updateSliderValue(event) {
     const slider = event.target;
     const value = slider.value;
@@ -665,7 +684,6 @@ function updateSliderValue(event) {
         sliderValue.textContent = value + 'x';
     }
 }
-
 function updateSliderDisplays() {
     const sensitivitySlider = elements.sensitivitySlider;
     const speedSlider = elements.speedSlider;
@@ -682,7 +700,6 @@ function updateSliderDisplays() {
         if (display) display.textContent = value + 'x';
     }
 }
-
 function saveSettings() {
     // Simulate saving settings
     showNotification('Settings saved successfully!', 'success');
@@ -693,7 +710,6 @@ function saveSettings() {
         updateUserProfile();
     }
 }
-
 function resetSettings() {
     // Reset to default values
     if (elements.userTypeSetting) {
@@ -709,27 +725,23 @@ function resetSettings() {
     updateSliderDisplays();
     showNotification('Settings reset to default', 'info');
 }
-
 // Modal Functions
 function openProfileModal() {
     if (elements.profileModal) {
         elements.profileModal.classList.remove('hidden');
     }
 }
-
 function closeProfileModal() {
     if (elements.profileModal) {
         elements.profileModal.classList.add('hidden');
     }
 }
-
 function selectUserProfile(userType) {
     currentUserType = userType;
     updateUserProfile();
     closeProfileModal();
     showNotification(`Switched to ${userTypes[userType].name}`, 'success');
 }
-
 function updateUserProfile() {
     const userInfo = userTypes[currentUserType];
     
@@ -749,7 +761,6 @@ function updateUserProfile() {
         elements.userTypeSetting.value = currentUserType;
     }
 }
-
 // Utility Functions
 function showNotification(message, type = 'info') {
     // Create notification element
@@ -803,7 +814,6 @@ function showNotification(message, type = 'info') {
         }, 300);
     }, 3000);
 }
-
 // Accessibility Functions
 function announceForScreenReader(message) {
     const announcement = document.createElement('div');
@@ -818,7 +828,6 @@ function announceForScreenReader(message) {
         document.body.removeChild(announcement);
     }, 1000);
 }
-
 // Initialize keyboard navigation
 document.addEventListener('keydown', function(event) {
     // ESC key to close modals
@@ -843,7 +852,6 @@ document.addEventListener('keydown', function(event) {
         }
     }
 });
-
 // Export functions for global access
 window.navigateToPage = navigateToPage;
 window.simulateGestureRecognition = simulateGestureRecognition;
