@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Speech App</title>
+
+<style>
+body{
+  background:#f2f6ff;
+  font-family:Arial;
+}
+
+.container{
+  width:350px;
+  background:white;
+  padding:30px;
+  margin:80px auto;
+  border-radius:10px;
+  box-shadow:0 0 10px gray;
+  text-align:center;
+}
+
+input,select,button{
+  width:90%;
+  padding:10px;
+  margin:8px;
+}
+
+button{
+  background:#4a63ff;
+  color:white;
+  border:none;
+  border-radius:5px;
+  cursor:pointer;
+}
+
+button:hover{
+  background:#3548c9;
+}
+
+h2{
+  color:#4a63ff;
+}
+
+#speechSection{
+  display:none;
+}
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h2 id="title">Login</h2>
+
+<div id="loginBox">
+  <input id="lemail" placeholder="Email">
+  <input id="lpass" type="password" placeholder="Password">
+  <button onclick="login()">Login</button>
+  <p onclick="showRegister()" style="cursor:pointer;color:blue;">Create account</p>
+</div>
+
+<div id="registerBox" style="display:none;">
+  <input id="rname" placeholder="Name">
+  <input id="remail" placeholder="Email">
+  <input id="rpass" type="password" placeholder="Password">
+  <select id="rrole">
+    <option value="hearing">Hearing</option>
+    <option value="deaf">Deaf</option>
+  </select>
+  <button onclick="register()">Register</button>
+  <p onclick="showLogin()" style="cursor:pointer;color:blue;">Already have account?</p>
+</div>
+
+<div id="speechSection">
+  <h2>Speech To Text</h2>
+  <button onclick="startSpeech()">🎤 Start Speaking</button>
+  <p id="output"></p>
+  <button onclick="logout()">Logout</button>
+</div>
+
+</div>
+
+<script>
+
+function showRegister(){
+document.getElementById("loginBox").style.display="none";
+document.getElementById("registerBox").style.display="block";
+document.getElementById("title").innerText="Register";
+}
+
+function showLogin(){
+document.getElementById("loginBox").style.display="block";
+document.getElementById("registerBox").style.display="none";
+document.getElementById("title").innerText="Login";
+}
+
+function register(){
+fetch("http://localhost:5000/register",{
+method:"POST",
+headers:{ "Content-Type":"application/json"},
+body:JSON.stringify({
+name:rname.value,
+email:remail.value,
+password:rpass.value,
+role:rrole.value
+})
+})
+.then(res=>res.json())
+.then(data=>alert(data.message));
+}
+
+function login(){
+fetch("http://localhost:5000/login",{
+method:"POST",
+headers:{ "Content-Type":"application/json"},
+body:JSON.stringify({
+email:lemail.value,
+password:lpass.value
+})
+})
+.then(res=>res.json())
+.then(data=>{
+if(data.message=="Login Successful"){
+document.getElementById("loginBox").style.display="none";
+document.getElementById("speechSection").style.display="block";
+document.getElementById("title").innerText="Welcome";
+}else{
+alert(data.message);
+}
+});
+}
+
+function startSpeech(){
+const recognition=new webkitSpeechRecognition();
+recognition.lang="en-IN";
+recognition.onresult=function(event){
+let text=event.results[0][0].transcript;
+document.getElementById("output").innerText=text;
+
+fetch("http://localhost:5000/saveText",{
+method:"POST",
+headers:{ "Content-Type":"application/json"},
+body:JSON.stringify({text:text})
+});
+}
+recognition.start();
+}
+
+function logout(){
+location.reload();
+}
+
+</script>
+
+</body>
+</html>
